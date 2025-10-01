@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>HTML de Prueba — Demo</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#7c3aed;--muted:#94a3b8;--glass:rgba(255,255,255,0.04)}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;color:#e6eef8;background:linear-gradient(180deg,#071124 0%, #081427 60%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px}
+    .container{width:100%;max-width:980px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#1fb6ff);display:flex;align-items:center;justify-content:center;font-weight:700;color:white}
+    h1{font-size:20px;margin:0}
+    p.lead{margin:0;color:var(--muted);font-size:13px}
+
+    .grid{display:grid;grid-template-columns:1fr 320px;gap:18px}
+    .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 18px rgba(2,6,23,0.6);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.02)}
+    .controls{display:flex;gap:8px;align-items:center}
+    .btn{background:var(--accent);padding:8px 12px;border-radius:8px;border:0;color:white;font-weight:600;cursor:pointer}
+    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}
+
+    .list{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+    .item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;background:var(--glass)}
+
+    footer{margin-top:16px;color:var(--muted);font-size:13px;text-align:center}
+
+    /* small responsive */
+    @media (max-width:880px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="logo">HT</div>
+        <div>
+          <h1>HTML de Prueba — (GPT ESTÁ ROTO)</h1>
+          <p class="lead">Pequeña página interactiva para testing rápido.</p>
+        </div>
+      </div>
+      <div class="controls">
+        <button id="darkToggle" class="btn ghost">Modo claro</button>
+        <button id="resetBtn" class="btn">Limpiar</button>
+      </div>
+    </header>
+
+    <main class="grid">
+      <section class="card">
+        <h2>Agregar tarea de prueba</h2>
+        <p class="lead">Escribe un elemento y presiona Enter o clic en "Agregar".</p>
+        <form id="taskForm" style="margin-top:12px;display:flex;gap:8px">
+          <input id="taskInput" type="text" placeholder="Ej. Revisar logs del servidor" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit" />
+          <button class="btn" type="submit">Agregar</button>
+        </form>
+
+        <div class="list" id="taskList" aria-live="polite" style="margin-top:14px">
+          <!-- items injected here -->
+        </div>
+
+        <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button id="sampleBtn" class="btn ghost">Agregar ejemplo</button>
+          <button id="exportBtn" class="btn">Exportar JSON</button>
+          <span style="color:var(--muted);font-size:13px">Total: <strong id="count">0</strong></span>
+        </div>
+      </section>
+
+      <aside class="card">
+        <h3>Información rápida</h3>
+        <p class="lead" style="margin-top:6px">Este panel muestra datos simples generados por la interacción.</p>
+
+        <div style="margin-top:12px">
+          <div style="font-weight:700">Última acción:</div>
+          <div id="lastAction" style="color:var(--muted);margin-top:6px">—</div>
+        </div>
+
+        <hr style="border:none;height:1px;background:rgba(255,255,255,0.02);margin:12px 0">
+
+        <div>
+          <div style="font-weight:700">Ejemplos:</div>
+          <ul style="margin-top:8px;color:var(--muted);padding-left:18px">
+            <li>Interactividad con DOM</li>
+            <li>Exportar datos simple (JSON)</li>
+            <li>Modo claro/oscuro</li>
+          </ul>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="card" style="margin-top:18px">
+      <small>Demo creada rápido — puedes copiar este archivo y abrirlo en tu navegador.</small>
+    </footer>
+  </div>
+
+  <script>
+    const form = document.getElementById('taskForm');
+    const input = document.getElementById('taskInput');
+    const list = document.getElementById('taskList');
+    const countEl = document.getElementById('count');
+    const lastAction = document.getElementById('lastAction');
+    const sampleBtn = document.getElementById('sampleBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const darkToggle = document.getElementById('darkToggle');
+
+    let tasks = [];
+
+    function render() {
+      list.innerHTML = '';
+      tasks.forEach((t, i) => {
+        const item = document.createElement('div');
+        item.className = 'item';
+        item.innerHTML = `
+          <div style="flex:1">
+            <div style="font-weight:700">${escapeHtml(t.text)}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px">Creado: ${new Date(t.created).toLocaleString()}</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button data-i="${i}" class="btn ghost" onclick="removeTask(${i})">Eliminar</button>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+      countEl.textContent = tasks.length;
+      lastAction.textContent = tasks.length ? `Tareas almacenadas: ${tasks.length}` : 'Sin tareas';
+    }
+
+    function escapeHtml(s){return s.replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"})[c])}
+
+    function addTask(text){
+      if(!text || !text.trim()) return;
+      tasks.unshift({text: text.trim(), created: Date.now()});
+      render();
+    }
+
+    function removeTask(i){
+      tasks.splice(i,1);
+      render();
+    }
+
+    sampleBtn.addEventListener('click', e=>{
+      addTask('Revisar pipeline de CI/CD');
+    });
+
+    exportBtn.addEventListener('click', e=>{
+      const data = JSON.stringify(tasks, null, 2);
+      const blob = new Blob([data], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'tasks_demo.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      lastAction.textContent = 'Exportado JSON';
+    });
+
+    resetBtn.addEventListener('click', ()=>{
+      tasks = [];
+      render();
+      lastAction.textContent = 'Lista reiniciada';
+    });
+
+    form.addEventListener('submit', e=>{
+      e.preventDefault();
+      addTask(input.value);
+      input.value = '';
+    });
+
+    // dark / light toggle (simple)
+    darkToggle.addEventListener('click', ()=>{
+      const isLight = document.documentElement.style.getPropertyValue('--bg') === '#fff';
+      if(!isLight){
+        document.documentElement.style.setProperty('--bg', '#ffffff');
+        document.documentElement.style.setProperty('--card', '#f3f4f6');
+        document.documentElement.style.setProperty('--accent', '#7c3aed');
+        document.documentElement.style.setProperty('--muted', '#475569');
+        document.documentElement.style.setProperty('--glass', 'rgba(2,6,23,0.03)');
+        document.body.style.color = '#071124';
+        darkToggle.textContent = 'Modo oscuro';
+        lastAction.textContent = 'Modo claro activado';
+      } else {
+        document.documentElement.style.setProperty('--bg', '#0f1724');
+        document.documentElement.style.setProperty('--card', '#0b1220');
+        document.documentElement.style.setProperty('--accent', '#7c3aed');
+        document.documentElement.style.setProperty('--muted', '#94a3b8');
+        document.documentElement.style.setProperty('--glass', 'rgba(255,255,255,0.04)');
+        document.body.style.color = '#e6eef8';
+        darkToggle.textContent = 'Modo claro';
+        lastAction.textContent = 'Modo oscuro activado';
+      }
+    });
+
+    // expose removeTask to global for inline onclick
+    window.removeTask = removeTask;
+
+    // initial example
+    addTask('Tarea de ejemplo: Probar HTML de demo');
+  </script>
+</body>
+</html>
